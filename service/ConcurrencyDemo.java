@@ -3,6 +3,7 @@ package service;
 import java.util.concurrent.CountDownLatch;
 
 import exception.BankException;
+import exception.InvalidAmountException;
 import model.Account;
 import model.CurrentAccount;
 
@@ -52,8 +53,7 @@ public class ConcurrencyDemo {
 
         processor.stop();
 
-        System.out.println("Final balance: Rs. "
-                + account.getBalance());
+        System.out.println("Final balance: Rs. " + account.getBalance());
     }
 
     private static void demonstrateProducerConsumer() {
@@ -96,8 +96,6 @@ public class ConcurrencyDemo {
     }
 
     private static void demonstrateDeadlock() {
-        // Separate accounts are used so the deadlock cannot affect
-        // the other demonstrations.
         Account a = new CurrentAccount("Deadlock A", 1000, 0);
         Account b = new CurrentAccount("Deadlock B", 1000, 0);
 
@@ -127,8 +125,8 @@ public class ConcurrencyDemo {
             }
         }, "Transfer-B-to-A");
 
-        // Daemon threads allow the program to exit even though
-        // this demonstration intentionally creates a deadlock.
+        // Daemon threads prevent the demonstration from keeping the
+        // application alive after the deadlock is demonstrated.
         t1.setDaemon(true);
         t2.setDaemon(true);
 
@@ -161,10 +159,15 @@ public class ConcurrencyDemo {
                     "Cannot transfer to the same account.");
         }
 
+        if (amount <= 0) {
+            throw new InvalidAmountException(
+                    "Transfer amount must be greater than zero.");
+        }
+
         Account first;
         Account second;
 
-        // Both transfer directions use the same lock order.
+        // Always acquire locks in account-number order.
         if (from.getAccountNumber().compareTo(to.getAccountNumber()) < 0) {
             first = from;
             second = to;
@@ -176,10 +179,18 @@ public class ConcurrencyDemo {
         synchronized (first) {
             synchronized (second) {
                 from.withdraw(amount);
-                to.deposit(amount);
 
-                System.out.println("Safe transfer successful: Rs. "
-                        + amount);
+                try {
+                    to.deposit(amount);
+                } catch (BankException e) {
+                    // Restore the source account if the destination
+                    // deposit fails.
+                    from.deposit(amount);
+                    throw e;
+                }
+
+                System.out.println(
+                        "Safe transfer successful: Rs. " + amount);
             }
         }
     }
@@ -192,13 +203,12 @@ public class ConcurrencyDemo {
             transferSafely(a, b, 100);
             transferSafely(b, a, 50);
 
-            System.out.println("Account A balance: Rs. "
-                    + a.getBalance());
-            System.out.println("Account B balance: Rs. "
-                    + b.getBalance());
+            System.out.println(
+                    "Account A balance: Rs. " + a.getBalance());
+            System.out.println(
+                    "Account B balance: Rs. " + b.getBalance());
         } catch (BankException e) {
             System.out.println("Transfer failed: " + e.getMessage());
         }
     }
 }
-
