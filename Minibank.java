@@ -15,6 +15,7 @@ import service.CommandParser;
 import util.AnnotationValidator;
 import util.StatementFormatter;
 import util.Validator;
+import service.ConcurrencyDemo;
 
 import static util.Validator.isValidMobile;
 
@@ -184,7 +185,7 @@ public class MiniBank {
             System.out.println("Validation test failed: "
                     + e.getMessage());
         }
-
+        ConcurrencyDemo.run();
         sc.close();
     }
 }
