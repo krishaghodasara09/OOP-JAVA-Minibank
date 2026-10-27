@@ -1,3 +1,4 @@
+
 import java.util.Scanner;
 
 public class MiniBank {
@@ -10,10 +11,12 @@ public class MiniBank {
 
     public static void main(String[] args) {
 
+        // Application header
         BankInfo bank = new BankInfo("MiniBank", "Main Branch");
         System.out.println("Welcome to " + bank.name()
                 + " - " + bank.branch());
 
+        // Practical 1: Menu
         Scanner sc = new Scanner(System.in);
         MenuOption choice = null;
 
@@ -64,41 +67,28 @@ public class MiniBank {
         accounts[2].deposit(1000);
 
         System.out.println("\n===== ACCOUNT BALANCES =====");
-
         for (Account account : accounts) {
             System.out.println(account.getOwnerName()
                     + ": Rs. " + account.getBalance());
         }
 
-        // Practical 3: Test toString()
+        // Practical 3: toString()
         System.out.println("\n===== ACCOUNT DETAILS =====");
-
         for (Account account : accounts) {
             System.out.println(account.toString());
         }
 
-        // Practical 3: Test equals()
-        System.out.println("\n===== EQUALITY TEST =====");
-
+        // Practical 3: equals()
         Account anotherAccount = new Account("Aarav", 5000);
-
-        System.out.println("Are accounts equal? "
+        System.out.println("\nAre accounts equal? "
                 + accounts[0].equals(anotherAccount));
 
-        // Practical 3: Test instanceof
-        System.out.println("\n===== INSTANCEOF TEST =====");
-
+        // Practical 3: instanceof
         Object obj = accounts[0];
+        System.out.println("Is object an Account? "
+                + (obj instanceof Account));
 
-        if (obj instanceof Account) {
-            System.out.println("The object is an Account.");
-        } else {
-            System.out.println("The object is not an Account.");
-        }
-
-        // Practical 3: Test Customer cloning and Address
-        System.out.println("\n===== CUSTOMER CLONE TEST =====");
-
+        // Practical 3: Customer clone and Address
         Customer customer = new Customer(
                 "Aarav", "aarav@example.com", "9876543210");
 
@@ -107,14 +97,51 @@ public class MiniBank {
 
         Customer copiedCustomer = customer.clone();
 
-        System.out.println("Original customer ID: "
+        System.out.println("\nOriginal customer ID: "
                 + customer.getCustomerId());
-
         System.out.println("Copied customer ID: "
                 + copiedCustomer.getCustomerId());
-
-        System.out.println("Address city: "
+        System.out.println("Customer city: "
                 + customer.getAddress().getCity());
+
+        // Practical 4: Test validators
+        System.out.println("\n===== VALIDATOR TESTS =====");
+
+        System.out.println("Valid mobile: "
+                + Validator.isValidMobile("9876543210"));
+        System.out.println("Invalid mobile: "
+                + Validator.isValidMobile("12345"));
+
+        System.out.println("Valid email: "
+                + Validator.isValidEmail("user@example.com"));
+        System.out.println("Invalid email: "
+                + Validator.isValidEmail("userexample.com"));
+
+        System.out.println("Valid PAN: "
+                + Validator.isValidPan("ABCDE1234F"));
+        System.out.println("Invalid PAN: "
+                + Validator.isValidPan("ABC123"));
+
+        System.out.println("Valid IFSC: "
+                + Validator.isValidIfsc("SBIN0001234"));
+        System.out.println("Invalid IFSC: "
+                + Validator.isValidIfsc("ABC123"));
+
+        // Practical 4: Parse a command
+        System.out.println("\n===== COMMAND PARSER TEST =====");
+
+        Command command = CommandParser.parse(
+                "DEPOSIT AC0001 500");
+
+        System.out.println("Type: " + command.type());
+        System.out.println("Account Number: "
+                + command.accountNumber());
+        System.out.println("Amount: " + command.amount());
+
+        // Practical 4: Format an account statement
+        System.out.println("\n===== STATEMENT TEST =====");
+        System.out.println(
+                StatementFormatter.buildStatement(accounts[0]));
 
         sc.close();
     }
