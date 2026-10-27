@@ -1,4 +1,3 @@
-
 import java.util.Scanner;
 
 public class MiniBank {
@@ -11,12 +10,10 @@ public class MiniBank {
 
     public static void main(String[] args) {
 
-        // Application header
         BankInfo bank = new BankInfo("MiniBank", "Main Branch");
         System.out.println("Welcome to " + bank.name()
                 + " - " + bank.branch());
 
-        // Practical 1: Menu
         Scanner sc = new Scanner(System.in);
         MenuOption choice = null;
 
@@ -55,38 +52,54 @@ public class MiniBank {
 
         } while (choice != MenuOption.EXIT);
 
-        // Practical 2: Create and test accounts
+        // Practical 5: Runtime polymorphism
         Account[] accounts = {
-            new Account("Aarav", 1000),
-            new Account("Diya", 2000),
-            new Account("Rohan")
+            new SavingsAccount("Aarav", 1000, 500),
+            new CurrentAccount("Diya", 2000, 1000),
+            new FixedDepositAccount("Rohan", 5000)
         };
 
         accounts[0].deposit(500);
-        accounts[1].withdraw(300);
+        accounts[1].withdraw(250);
         accounts[2].deposit(1000);
 
-        System.out.println("\n===== ACCOUNT BALANCES =====");
-        for (Account account : accounts) {
-            System.out.println(account.getOwnerName()
-                    + ": Rs. " + account.getBalance());
-        }
-
-        // Practical 3: toString()
         System.out.println("\n===== ACCOUNT DETAILS =====");
+
         for (Account account : accounts) {
-            System.out.println(account.toString());
+            System.out.println(account);
+            System.out.println("Interest Rate: "
+                    + account.interestRate() + "%");
         }
 
-        // Practical 3: equals()
-        Account anotherAccount = new Account("Aarav", 5000);
-        System.out.println("\nAre accounts equal? "
-                + accounts[0].equals(anotherAccount));
+        // Pattern matching with instanceof (Java 17+)
+        System.out.println("\n===== ACCOUNT TYPE CHECK =====");
 
-        // Practical 3: instanceof
-        Object obj = accounts[0];
-        System.out.println("Is object an Account? "
-                + (obj instanceof Account));
+        for (Account account : accounts) {
+            if (account instanceof SavingsAccount savings) {
+                System.out.println(savings.getOwnerName()
+                        + " has a savings account with minimum balance Rs. "
+                        + savings.getMinBalance());
+            }
+        }
+
+        // Test withdrawal rules
+        System.out.println("\n===== WITHDRAWAL TEST =====");
+
+        System.out.println("Savings withdrawal of Rs. 800: "
+                + accounts[0].withdraw(800));
+
+        System.out.println("Current withdrawal of Rs. 3000: "
+                + accounts[1].withdraw(3000));
+
+        System.out.println("Fixed deposit withdrawal of Rs. 100: "
+                + accounts[2].withdraw(100));
+
+        // Practical 3: Equality test
+        Account anotherAccount =
+                new SavingsAccount("Aarav", 5000, 500);
+
+        System.out.println("\nAre first and new accounts equal? "
+                + accounts[0].equals(anotherAccount));
 
         // Practical 3: Customer clone and Address
         Customer customer = new Customer(
@@ -104,7 +117,7 @@ public class MiniBank {
         System.out.println("Customer city: "
                 + customer.getAddress().getCity());
 
-        // Practical 4: Test validators
+        // Practical 4: Validator tests
         System.out.println("\n===== VALIDATOR TESTS =====");
 
         System.out.println("Valid mobile: "
@@ -127,18 +140,17 @@ public class MiniBank {
         System.out.println("Invalid IFSC: "
                 + Validator.isValidIfsc("ABC123"));
 
-        // Practical 4: Parse a command
+        // Practical 4: Command parser
         System.out.println("\n===== COMMAND PARSER TEST =====");
 
-        Command command = CommandParser.parse(
-                "DEPOSIT AC0001 500");
+        Command command = CommandParser.parse("DEPOSIT AC0001 500");
 
         System.out.println("Type: " + command.type());
         System.out.println("Account Number: "
                 + command.accountNumber());
         System.out.println("Amount: " + command.amount());
 
-        // Practical 4: Format an account statement
+        // Practical 4: Statement formatter
         System.out.println("\n===== STATEMENT TEST =====");
         System.out.println(
                 StatementFormatter.buildStatement(accounts[0]));

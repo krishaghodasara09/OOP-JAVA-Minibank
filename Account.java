@@ -1,8 +1,8 @@
-public class Account {
+public abstract class Account {
 
     private final String accountNumber;
     private String ownerName;
-    private long balance;
+    protected long balance;
     private boolean active;
 
     private static int accountCounter = 0;
@@ -13,6 +13,11 @@ public class Account {
     }
 
     public Account(String ownerName, long openingBalance) {
+        if (openingBalance < 0) {
+            throw new IllegalArgumentException(
+                    "Opening balance cannot be negative.");
+        }
+
         this.accountNumber = generateAccountNumber();
         this.ownerName = ownerName;
         this.balance = openingBalance;
@@ -30,12 +35,16 @@ public class Account {
     }
 
     public boolean withdraw(long amount) {
-        if (amount > 0 && balance >= amount) {
+        if (canWithdraw(amount)) {
             balance -= amount;
             return true;
         }
         return false;
     }
+
+    public abstract double interestRate();
+
+    public abstract boolean canWithdraw(long amount);
 
     public String getAccountNumber() {
         return accountNumber;
