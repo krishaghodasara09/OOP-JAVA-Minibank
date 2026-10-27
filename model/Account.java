@@ -1,11 +1,21 @@
 package model;
 
+import model.annotation.Id;
+import model.annotation.Positive;
+import model.annotation.MaxLength;
+
 public abstract class Account
         implements Transactable, InterestBearing {
 
+    @Id
     private final String accountNumber;
+
+    @MaxLength(50)
     private String ownerName;
+
+    @Positive
     protected long balance;
+
     private boolean active;
 
     private static int accountCounter = 0;
@@ -81,11 +91,9 @@ public abstract class Account
         if (this == o) {
             return true;
         }
-
         if (!(o instanceof Account other)) {
             return false;
         }
-
         return accountNumber.equals(other.accountNumber);
     }
 
