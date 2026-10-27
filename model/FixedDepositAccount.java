@@ -1,3 +1,5 @@
+package model;
+
 public class FixedDepositAccount extends Account {
 
     public FixedDepositAccount(String ownerName, long openingBalance) {
@@ -14,4 +16,3 @@ public class FixedDepositAccount extends Account {
         return false;
     }
 }
-

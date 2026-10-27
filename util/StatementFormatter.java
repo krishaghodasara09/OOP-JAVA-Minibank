@@ -1,3 +1,7 @@
+package util;
+
+import model.Account;
+
 public class StatementFormatter {
 
     public static String buildStatement(Account account) {
@@ -10,6 +14,10 @@ public class StatementFormatter {
                 .append(account.getOwnerName()).append("\n");
         statement.append("Balance: Rs. ")
                 .append(account.getBalance()).append("\n");
+        statement.append("Interest Rate: ")
+                .append(account.interestRate()).append("%\n");
+        statement.append("Yearly Interest: Rs. ")
+                .append(account.yearlyInterest()).append("\n");
         statement.append("Active: ")
                 .append(account.isActive()).append("\n");
         statement.append("=============================");
@@ -17,4 +25,3 @@ public class StatementFormatter {
         return statement.toString();
     }
 }
-

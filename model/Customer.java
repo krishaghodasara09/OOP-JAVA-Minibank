@@ -1,3 +1,4 @@
+package model;
 
 public class Customer implements Cloneable {
 
@@ -5,7 +6,6 @@ public class Customer implements Cloneable {
     private String email;
     private String mobile;
     private final String customerId;
-
     private Address address;
 
     private static long customerCounter = 100;
@@ -46,7 +46,6 @@ public class Customer implements Cloneable {
         this.address = address;
     }
 
-    // Public static nested Address class
     public static class Address {
         private String line;
         private String city;
@@ -71,7 +70,6 @@ public class Customer implements Cloneable {
         }
     }
 
-    // Creates a copy of the customer
     @Override
     public Customer clone() {
         try {

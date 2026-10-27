@@ -1,3 +1,4 @@
+package model;
 
 public class CurrentAccount extends Account {
 
@@ -30,4 +31,3 @@ public class CurrentAccount extends Account {
         return overdraftLimit;
     }
 }
-

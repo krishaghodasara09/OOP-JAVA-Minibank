@@ -1,4 +1,6 @@
-public class SavingsAccount extends Account {
+package model;
+
+public class SavingsAccount extends Account implements Premium {
 
     private long minBalance;
 
@@ -8,7 +10,7 @@ public class SavingsAccount extends Account {
 
         if (minBalance < 0 || openingBalance < minBalance) {
             throw new IllegalArgumentException(
-                    "Opening balance must be at least the minimum balance.");
+                    "Opening balance must be at least minimum balance.");
         }
 
         this.minBalance = minBalance;
@@ -30,4 +32,3 @@ public class SavingsAccount extends Account {
         return minBalance;
     }
 }
-

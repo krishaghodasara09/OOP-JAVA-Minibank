@@ -1,8 +1,6 @@
-enum TransactionType {
-    DEPOSIT, WITHDRAW, TRANSFER
-}
+package model;
 
-record Command(
+public record Command(
         TransactionType type,
         String accountNumber,
         long amount

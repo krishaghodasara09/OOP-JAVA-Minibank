@@ -1,4 +1,17 @@
+
 import java.util.Scanner;
+
+import model.Account;
+import model.Command;
+import model.CurrentAccount;
+import model.FixedDepositAccount;
+import model.SavingsAccount;
+import model.WithdrawRule;
+import service.CommandParser;
+import util.StatementFormatter;
+import util.Validator;
+
+import static util.Validator.isValidMobile;
 
 public class MiniBank {
 
@@ -12,8 +25,9 @@ public class MiniBank {
 
         BankInfo bank = new BankInfo("MiniBank", "Main Branch");
         System.out.println("Welcome to " + bank.name()
-                + " - " + bank.branch());
+        + " - " + bank.branch());
 
+        // Menu
         Scanner sc = new Scanner(System.in);
         MenuOption choice = null;
 
@@ -37,123 +51,71 @@ public class MiniBank {
 
             String message = switch (choice) {
                 case OPEN_ACCOUNT ->
-                    "Open Account - to be implemented in a later lab";
+                    "Open Account - to be implemented later";
                 case DEPOSIT ->
-                    "Deposit - to be implemented in a later lab";
+                    "Deposit - to be implemented later";
                 case WITHDRAW ->
-                    "Withdraw - to be implemented in a later lab";
+                    "Withdraw - to be implemented later";
                 case TRANSFER ->
-                    "Transfer - to be implemented in a later lab";
-                case EXIT ->
-                    "Goodbye! Thank you for using MiniBank.";
+                    "Transfer - to be implemented later";
+                case EXIT -> "Goodbye!";
             };
 
             System.out.println(message);
 
         } while (choice != MenuOption.EXIT);
 
-        // Practical 5: Runtime polymorphism
+        // Polymorphism
         Account[] accounts = {
             new SavingsAccount("Aarav", 1000, 500),
             new CurrentAccount("Diya", 2000, 1000),
             new FixedDepositAccount("Rohan", 5000)
         };
 
-        accounts[0].deposit(500);
-        accounts[1].withdraw(250);
-        accounts[2].deposit(1000);
-
-        System.out.println("\n===== ACCOUNT DETAILS =====");
+        System.out.println("\n===== ACCOUNT INTEREST =====");
 
         for (Account account : accounts) {
             System.out.println(account);
-            System.out.println("Interest Rate: "
-                    + account.interestRate() + "%");
+            System.out.println("Rate: " + account.interestRate() + "%");
+            System.out.println("Yearly interest: Rs. "
+                    + account.yearlyInterest());
         }
 
-        // Pattern matching with instanceof (Java 17+)
-        System.out.println("\n===== ACCOUNT TYPE CHECK =====");
-
-        for (Account account : accounts) {
-            if (account instanceof SavingsAccount savings) {
-                System.out.println(savings.getOwnerName()
-                        + " has a savings account with minimum balance Rs. "
-                        + savings.getMinBalance());
+        // Anonymous class implementation
+        WithdrawRule rule1 = new WithdrawRule() {
+            @Override
+            public boolean allow(Account account, long amount) {
+                return account.canWithdraw(amount);
             }
-        }
+        };
 
-        // Test withdrawal rules
-        System.out.println("\n===== WITHDRAWAL TEST =====");
+        System.out.println("\nAnonymous class allows withdrawal: "
+                + rule1.allow(accounts[0], 200));
 
-        System.out.println("Savings withdrawal of Rs. 800: "
-                + accounts[0].withdraw(800));
+        // Lambda implementation
+        WithdrawRule rule2 =
+                (account, amount) -> account.canWithdraw(amount);
 
-        System.out.println("Current withdrawal of Rs. 3000: "
-                + accounts[1].withdraw(3000));
+        System.out.println("Lambda allows withdrawal: "
+                + rule2.allow(accounts[0], 200));
 
-        System.out.println("Fixed deposit withdrawal of Rs. 100: "
-                + accounts[2].withdraw(100));
-
-        // Practical 3: Equality test
-        Account anotherAccount =
-                new SavingsAccount("Aarav", 5000, 500);
-
-        System.out.println("\nAre first and new accounts equal? "
-                + accounts[0].equals(anotherAccount));
-
-        // Practical 3: Customer clone and Address
-        Customer customer = new Customer(
-                "Aarav", "aarav@example.com", "9876543210");
-
-        customer.setAddress(new Customer.Address(
-                "12 Main Road", "Ahmedabad", "380001"));
-
-        Customer copiedCustomer = customer.clone();
-
-        System.out.println("\nOriginal customer ID: "
-                + customer.getCustomerId());
-        System.out.println("Copied customer ID: "
-                + copiedCustomer.getCustomerId());
-        System.out.println("Customer city: "
-                + customer.getAddress().getCity());
-
-        // Practical 4: Validator tests
-        System.out.println("\n===== VALIDATOR TESTS =====");
-
-        System.out.println("Valid mobile: "
-                + Validator.isValidMobile("9876543210"));
-        System.out.println("Invalid mobile: "
-                + Validator.isValidMobile("12345"));
-
+        // Static import demonstration
+        System.out.println("\nValid mobile: "
+                + isValidMobile("9876543210"));
         System.out.println("Valid email: "
                 + Validator.isValidEmail("user@example.com"));
-        System.out.println("Invalid email: "
-                + Validator.isValidEmail("userexample.com"));
 
-        System.out.println("Valid PAN: "
-                + Validator.isValidPan("ABCDE1234F"));
-        System.out.println("Invalid PAN: "
-                + Validator.isValidPan("ABC123"));
-
-        System.out.println("Valid IFSC: "
-                + Validator.isValidIfsc("SBIN0001234"));
-        System.out.println("Invalid IFSC: "
-                + Validator.isValidIfsc("ABC123"));
-
-        // Practical 4: Command parser
-        System.out.println("\n===== COMMAND PARSER TEST =====");
-
+        // Command parser
         Command command = CommandParser.parse("DEPOSIT AC0001 500");
 
-        System.out.println("Type: " + command.type());
-        System.out.println("Account Number: "
-                + command.accountNumber());
-        System.out.println("Amount: " + command.amount());
+        System.out.println("\nParsed command: "
+                + command.type() + ", "
+                + command.accountNumber() + ", "
+                + command.amount());
 
-        // Practical 4: Statement formatter
-        System.out.println("\n===== STATEMENT TEST =====");
-        System.out.println(
-                StatementFormatter.buildStatement(accounts[0]));
+        // Statement formatter
+        System.out.println("\n"
+                + StatementFormatter.buildStatement(accounts[0]));
 
         sc.close();
     }

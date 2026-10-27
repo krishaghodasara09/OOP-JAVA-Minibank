@@ -1,3 +1,4 @@
+package util;
 
 import java.util.regex.Pattern;
 
@@ -16,19 +17,22 @@ public class Validator {
             Pattern.compile("^[A-Z]{4}0[A-Z0-9]{6}$");
 
     public static boolean isValidMobile(String mobile) {
-        return mobile != null && MOBILE_PATTERN.matcher(mobile).matches();
+        return mobile != null
+                && MOBILE_PATTERN.matcher(mobile).matches();
     }
 
     public static boolean isValidEmail(String email) {
-        return email != null && EMAIL_PATTERN.matcher(email).matches();
+        return email != null
+                && EMAIL_PATTERN.matcher(email).matches();
     }
 
     public static boolean isValidPan(String pan) {
-        return pan != null && PAN_PATTERN.matcher(pan).matches();
+        return pan != null
+                && PAN_PATTERN.matcher(pan).matches();
     }
 
     public static boolean isValidIfsc(String ifsc) {
-        return ifsc != null && IFSC_PATTERN.matcher(ifsc).matches();
+        return ifsc != null
+                && IFSC_PATTERN.matcher(ifsc).matches();
     }
 }
-
