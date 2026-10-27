@@ -1,12 +1,16 @@
 import java.lang.reflect.Field;
 import java.util.Scanner;
 
+import exception.BankException;
+import exception.InsufficientFundsException;
+import exception.InvalidAmountException;
 import model.Account;
 import model.Command;
 import model.CurrentAccount;
 import model.FixedDepositAccount;
 import model.SavingsAccount;
 import model.WithdrawRule;
+import service.BankSession;
 import service.CommandParser;
 import util.AnnotationValidator;
 import util.StatementFormatter;
@@ -112,14 +116,54 @@ public class MiniBank {
         System.out.println("\n"
                 + StatementFormatter.buildStatement(accounts[0]));
 
-        // Practical 7: Annotation and reflection validation
+        // Demonstrate checked exceptions.
+        System.out.println("\n===== EXCEPTION HANDLING =====");
+
+        try {
+            accounts[0].withdraw(700);
+        } catch (InsufficientFundsException e) {
+            System.out.println("Withdrawal failed: " + e.getMessage());
+            System.out.println("Shortfall: Rs. " + e.getShortfall());
+        } catch (InvalidAmountException e) {
+            System.out.println("Invalid withdrawal: " + e.getMessage());
+        } finally {
+            System.out.println("Withdrawal attempt completed.");
+        }
+
+        try {
+            accounts[0].deposit(-100);
+        } catch (InvalidAmountException e) {
+            System.out.println("Deposit failed: " + e.getMessage());
+        }
+
+        try {
+            accounts[0].transfer(accounts[1], 200);
+        } catch (BankException e) {
+            System.out.println("Transfer failed: " + e.getMessage());
+        }
+
+        try {
+            accounts[0].transfer(null, 100);
+        } catch (BankException e) {
+            System.out.println("Transfer failed: " + e.getMessage());
+        }
+
+        // Demonstrate try-with-resources.
+        System.out.println("\n===== TRY-WITH-RESOURCES =====");
+
+        try (BankSession session = new BankSession()) {
+            System.out.println("Performing banking operations...");
+        } finally {
+            System.out.println("Session block finished.");
+        }
+
+        // Practical 7: Annotation and reflection validation.
         System.out.println("\n===== ANNOTATION VALIDATION =====");
 
         Account testAccount =
                 new SavingsAccount("Test User", 1000, 500);
 
         try {
-            // Change balance only to test the @Positive annotation.
             Field balanceField =
                     Account.class.getDeclaredField("balance");
 
@@ -136,7 +180,6 @@ public class MiniBank {
                     System.out.println("Validation error: " + error);
                 }
             }
-
         } catch (ReflectiveOperationException e) {
             System.out.println("Validation test failed: "
                     + e.getMessage());

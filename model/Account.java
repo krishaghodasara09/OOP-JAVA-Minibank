@@ -1,11 +1,14 @@
 package model;
 
+import exception.AccountNotFoundException;
+import exception.BankException;
+import exception.InsufficientFundsException;
+import exception.InvalidAmountException;
 import model.annotation.Id;
 import model.annotation.Positive;
 import model.annotation.MaxLength;
 
-public abstract class Account
-        implements Transactable, InterestBearing {
+public abstract class Account implements Transactable, InterestBearing {
 
     @Id
     private final String accountNumber;
@@ -42,19 +45,59 @@ public abstract class Account
     }
 
     @Override
-    public void deposit(long amount) {
-        if (amount > 0) {
-            balance += amount;
+    public void deposit(long amount) throws InvalidAmountException {
+        if (amount <= 0) {
+            throw new InvalidAmountException(
+                    "Deposit amount must be greater than zero.");
         }
+        balance += amount;
     }
 
     @Override
-    public boolean withdraw(long amount) {
-        if (canWithdraw(amount)) {
-            balance -= amount;
-            return true;
+    public boolean withdraw(long amount)
+            throws InsufficientFundsException, InvalidAmountException {
+
+        if (amount <= 0) {
+            throw new InvalidAmountException(
+                    "Withdrawal amount must be greater than zero.");
         }
-        return false;
+
+        if (!canWithdraw(amount)) {
+            throw new InsufficientFundsException(
+                    "Insufficient funds or account withdrawal limit exceeded.",
+                    withdrawalShortfall(amount));
+        }
+
+        balance -= amount;
+        return true;
+    }
+
+    protected long withdrawalShortfall(long amount) {
+        return Math.max(0, amount - balance);
+    }
+
+    public void transfer(Account to, long amount) throws BankException {
+        try {
+            if (to == null) {
+                throw new AccountNotFoundException(
+                        "Destination account was not found.");
+            }
+
+            if (to == this) {
+                throw new BankException(
+                        "Cannot transfer money to the same account.");
+            }
+
+            withdraw(amount);
+            to.deposit(amount);
+
+            System.out.println("Transfer successful: Rs. " + amount);
+
+        } catch (BankException e) {
+            throw e;
+        } finally {
+            System.out.println("Transfer operation finished.");
+        }
     }
 
     public abstract boolean canWithdraw(long amount);

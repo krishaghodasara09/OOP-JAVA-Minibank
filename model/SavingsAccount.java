@@ -23,9 +23,12 @@ public class SavingsAccount extends Account implements Premium {
 
     @Override
     public boolean canWithdraw(long amount) {
-        return amount > 0
-                && balance >= minBalance
-                && amount <= balance - minBalance;
+        return amount > 0 && amount <= balance - minBalance;
+    }
+
+    @Override
+    protected long withdrawalShortfall(long amount) {
+        return Math.max(0, amount - (balance - minBalance));
     }
 
     public long getMinBalance() {
