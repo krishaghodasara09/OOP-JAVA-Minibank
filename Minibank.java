@@ -81,6 +81,38 @@ public class MiniBank {
             new FixedDepositAccount("Rohan", 5000)
         };
 
+        // ===== MILESTONE 2: COLLECTIONS FRAMEWORK =====
+        System.out.println("\n===== MILESTONE 2: ACCOUNT STORE =====");
+
+        util.AccountStore store = new util.AccountStore();
+
+        for (Account account : accounts) {
+            store.add(account);
+        }
+
+        System.out.println("\nAccounts sorted by balance:");
+
+        for (Account account : store.sortedByBalance()) {
+            System.out.println(account);
+        }
+
+        // Demonstrate account lookup
+        if (accounts.length > 0) {
+            String searchNumber = accounts[0].getAccountNumber();
+
+            System.out.println("\nSearching for account: " + searchNumber);
+            System.out.println(store.get(searchNumber));
+        }
+
+        // Demonstrate transaction history
+        store.addTransaction("DEPOSIT,100");
+        store.addTransaction("WITHDRAWAL,50");
+
+        System.out.println("\nTransaction history:");
+        for (String transaction : store.getTransactionHistory()) {
+            System.out.println(transaction);
+        }
+
         System.out.println("\n===== ACCOUNT INTEREST =====");
 
         for (Account account : accounts) {

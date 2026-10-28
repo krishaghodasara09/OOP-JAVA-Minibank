@@ -10,7 +10,9 @@ import model.annotation.Id;
 import model.annotation.Positive;
 import model.annotation.MaxLength;
 
-public abstract class Account implements Transactable, InterestBearing, Serializable {
+public abstract class Account
+        implements Transactable, InterestBearing,
+                   Serializable, Comparable<Account> {
 
     private static final long serialVersionUID = 1L;
 
@@ -49,11 +51,14 @@ public abstract class Account implements Transactable, InterestBearing, Serializ
     }
 
     @Override
-    public synchronized void deposit(long amount) throws InvalidAmountException {
+    public synchronized void deposit(long amount)
+            throws InvalidAmountException {
+
         if (amount <= 0) {
             throw new InvalidAmountException(
                     "Deposit amount must be greater than zero.");
         }
+
         balance += amount;
     }
 
@@ -126,6 +131,12 @@ public abstract class Account implements Transactable, InterestBearing, Serializ
         return active;
     }
 
+    // Compare accounts by account number
+    @Override
+    public int compareTo(Account other) {
+        return this.accountNumber.compareTo(other.accountNumber);
+    }
+
     @Override
     public String toString() {
         return "Account Number: " + accountNumber
@@ -138,9 +149,11 @@ public abstract class Account implements Transactable, InterestBearing, Serializ
         if (this == o) {
             return true;
         }
+
         if (!(o instanceof Account other)) {
             return false;
         }
+
         return accountNumber.equals(other.accountNumber);
     }
 
