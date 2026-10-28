@@ -1,4 +1,7 @@
+import java.io.IOException;
 import java.lang.reflect.Field;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Scanner;
 
 import exception.BankException;
@@ -12,10 +15,13 @@ import model.SavingsAccount;
 import model.WithdrawRule;
 import service.BankSession;
 import service.CommandParser;
-import util.AnnotationValidator;
-import util.StatementFormatter;
-import util.Validator;
 import service.ConcurrencyDemo;
+import util.AnnotationValidator;
+import util.ReportGenerator;
+import util.StatePersister;
+import util.StatementFormatter;
+import util.TransactionLog;
+import util.Validator;
 
 import static util.Validator.isValidMobile;
 
@@ -117,7 +123,7 @@ public class MiniBank {
         System.out.println("\n"
                 + StatementFormatter.buildStatement(accounts[0]));
 
-        // Demonstrate checked exceptions.
+        // Practical 8: Checked exceptions.
         System.out.println("\n===== EXCEPTION HANDLING =====");
 
         try {
@@ -149,7 +155,7 @@ public class MiniBank {
             System.out.println("Transfer failed: " + e.getMessage());
         }
 
-        // Demonstrate try-with-resources.
+        // Practical 8: Try-with-resources.
         System.out.println("\n===== TRY-WITH-RESOURCES =====");
 
         try (BankSession session = new BankSession()) {
@@ -185,7 +191,67 @@ public class MiniBank {
             System.out.println("Validation test failed: "
                     + e.getMessage());
         }
+
+        // Practical 10: Concurrency demonstrations.
         ConcurrencyDemo.run();
+
+        // Practical 11: Serialization, transaction logging and reporting.
+        demonstratePersistenceAndReporting(accounts);
+
         sc.close();
+    }
+
+    private static void demonstratePersistenceAndReporting(
+            Account[] accounts) {
+
+        Path accountFile = Path.of("data", "accounts.dat");
+        Path logsFolder = Path.of("logs");
+        Path transactionFile = logsFolder.resolve("transactions.log");
+        Path reportFile = Path.of(
+                "reports", "end-of-day-report.txt");
+
+        System.out.println("\n===== PRACTICAL 11: PERSISTENCE =====");
+
+        try {
+            // Save the accounts to a file.
+            StatePersister.save(accounts, accountFile);
+            System.out.println("Saved to: " + accountFile);
+
+            // Load into a separate array.
+            Account[] loadedAccounts =
+                    StatePersister.load(accountFile);
+
+            System.out.println("\nReloaded accounts:");
+
+            for (Account account : loadedAccounts) {
+                System.out.println(account);
+            }
+
+            // Append sample transactions to the log.
+            TransactionLog.append(transactionFile, "DEPOSIT,100");
+            TransactionLog.append(transactionFile, "WITHDRAWAL,50");
+            TransactionLog.append(transactionFile, "DEPOSIT,200");
+
+            System.out.println("\nTransactions appended to: "
+                    + transactionFile);
+
+            // Generate the end-of-day report.
+            ReportGenerator.generate(logsFolder, reportFile);
+
+            System.out.println("\n===== END-OF-DAY REPORT =====");
+
+            for (String line : Files.readAllLines(reportFile)) {
+                System.out.println(line);
+            }
+
+            System.out.println("\nReport saved to: " + reportFile);
+
+        } catch (IOException e) {
+            System.out.println("File operation failed: "
+                    + e.getMessage());
+        } catch (RuntimeException e) {
+            System.out.println("Persistence operation failed: "
+                    + e.getMessage());
+        }
     }
 }
