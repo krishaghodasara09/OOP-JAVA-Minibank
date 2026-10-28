@@ -81,6 +81,37 @@ public class MiniBank {
             new FixedDepositAccount("Rohan", 5000)
         };
 
+        
+        // ===== PRACTICAL: GENERIC REPOSITORY =====
+        System.out.println("\n===== GENERIC REPOSITORY =====");
+
+        util.Repository<Account> repository =
+                new util.Repository<>();
+
+        // Save all accounts
+        repository.saveAll(accounts);
+
+        // Fetch one account using its account number
+        String searchId = accounts[0].getAccountNumber();
+
+        System.out.println("\nAccount found by ID:");
+        System.out.println(repository.findById(searchId));
+
+        // Print all stored accounts
+        System.out.println("\nAll accounts in repository:");
+        for (Account account : repository.findAll()) {
+            System.out.println(account);
+        }
+
+        // Demonstrate deletion
+        System.out.println("\nAccount deleted: "
+                + repository.delete("INVALID-ID"));
+
+        // Demonstrate the bounded generic method
+        Integer[] numbers = {10, 20, 30, 40};
+        System.out.println("\nAverage: "
+                + util.Repository.average(numbers));
+
         // ===== MILESTONE 2: COLLECTIONS FRAMEWORK =====
         System.out.println("\n===== MILESTONE 2: ACCOUNT STORE =====");
 
