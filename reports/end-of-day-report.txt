@@ -1,6 +1,0 @@
-===== END-OF-DAY BANK REPORT =====
-Total deposits: Rs. 900
-Total withdrawals: Rs. 150
-
-===== LOG FILE DETAILS =====
-File: transactions.log | Size: 123 bytes | Last modified: 2026-10-28T14:14:34.5990405Z

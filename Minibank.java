@@ -1,320 +1,432 @@
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Scanner;
 
 import exception.BankException;
 import exception.InsufficientFundsException;
 import exception.InvalidAmountException;
 import model.Account;
-import model.Command;
 import model.CurrentAccount;
 import model.FixedDepositAccount;
 import model.SavingsAccount;
-import model.WithdrawRule;
-import service.BankSession;
-import service.CommandParser;
-import service.ConcurrencyDemo;
-import util.AnnotationValidator;
+import util.AccountStore;
 import util.ReportGenerator;
 import util.StatePersister;
-import util.StatementFormatter;
 import util.TransactionLog;
-import util.Validator;
-
-import static util.Validator.isValidMobile;
 
 public class MiniBank {
 
-    record BankInfo(String name, String branch) {}
+    private static final Path ACCOUNT_FILE =
+            Path.of("data", "accounts.dat");
 
-    enum MenuOption {
-        OPEN_ACCOUNT, DEPOSIT, WITHDRAW, TRANSFER, EXIT
-    }
+    private static final Path LOGS_FOLDER =
+            Path.of("logs");
+
+    private static final Path TRANSACTION_FILE =
+            LOGS_FOLDER.resolve("transactions.log");
+
+    private static final Path REPORT_FILE =
+            Path.of("reports", "end-of-day-report.txt");
+
+    private static final Scanner sc = new Scanner(System.in);
+
+    private static final AccountStore store = new AccountStore();
 
     public static void main(String[] args) {
-        BankInfo bank = new BankInfo("MiniBank", "Main Branch");
-        System.out.println("Welcome to " + bank.name()
-                + " - " + bank.branch());
+        System.out.println("================================");
+        System.out.println("       WELCOME TO MINIBANK");
+        System.out.println("================================");
 
-        Scanner sc = new Scanner(System.in);
-        MenuOption choice = null;
+        loadAccounts();
 
-        do {
-            System.out.println("\n===== MINIBANK MENU =====");
-            System.out.println("1. Open Account");
-            System.out.println("2. Deposit");
-            System.out.println("3. Withdraw");
-            System.out.println("4. Transfer");
-            System.out.println("5. Exit");
-            System.out.print("Enter your choice: ");
+        boolean running = true;
 
-            int number = sc.nextInt();
+        while (running) {
+            showMenu();
 
-            if (number < 1 || number > 5) {
-                System.out.println("Invalid choice. Try again.");
-                continue;
-            }
+            int choice = readInt("Enter your choice: ");
 
-            choice = MenuOption.values()[number - 1];
-
-            String message = switch (choice) {
-                case OPEN_ACCOUNT ->
-                        "Open Account - to be implemented later";
-                case DEPOSIT ->
-                        "Deposit - to be implemented later";
-                case WITHDRAW ->
-                        "Withdraw - to be implemented later";
-                case TRANSFER ->
-                        "Transfer - to be implemented later";
-                case EXIT -> "Goodbye!";
-            };
-
-            System.out.println(message);
-
-        } while (choice != MenuOption.EXIT);
-
-        Account[] accounts = {
-            new SavingsAccount("Aarav", 1000, 500),
-            new CurrentAccount("Diya", 2000, 1000),
-            new FixedDepositAccount("Rohan", 5000)
-        };
-
-        
-        // ===== PRACTICAL: GENERIC REPOSITORY =====
-        System.out.println("\n===== GENERIC REPOSITORY =====");
-
-        util.Repository<Account> repository =
-                new util.Repository<>();
-
-        // Save all accounts
-        repository.saveAll(accounts);
-
-        // Fetch one account using its account number
-        String searchId = accounts[0].getAccountNumber();
-
-        System.out.println("\nAccount found by ID:");
-        System.out.println(repository.findById(searchId));
-
-        // Print all stored accounts
-        System.out.println("\nAll accounts in repository:");
-        for (Account account : repository.findAll()) {
-            System.out.println(account);
-        }
-
-        // Demonstrate deletion
-        System.out.println("\nAccount deleted: "
-                + repository.delete("INVALID-ID"));
-
-        // Demonstrate the bounded generic method
-        Integer[] numbers = {10, 20, 30, 40};
-        System.out.println("\nAverage: "
-                + util.Repository.average(numbers));
-
-        // ===== MILESTONE 2: COLLECTIONS FRAMEWORK =====
-        System.out.println("\n===== MILESTONE 2: ACCOUNT STORE =====");
-
-        util.AccountStore store = new util.AccountStore();
-
-        for (Account account : accounts) {
-            store.add(account);
-        }
-
-        System.out.println("\nAccounts sorted by balance:");
-
-        for (Account account : store.sortedByBalance()) {
-            System.out.println(account);
-        }
-
-        // Demonstrate account lookup
-        if (accounts.length > 0) {
-            String searchNumber = accounts[0].getAccountNumber();
-
-            System.out.println("\nSearching for account: " + searchNumber);
-            System.out.println(store.get(searchNumber));
-        }
-
-        // Demonstrate transaction history
-        store.addTransaction("DEPOSIT,100");
-        store.addTransaction("WITHDRAWAL,50");
-
-        System.out.println("\nTransaction history:");
-        for (String transaction : store.getTransactionHistory()) {
-            System.out.println(transaction);
-        }
-
-        System.out.println("\n===== ACCOUNT INTEREST =====");
-
-        for (Account account : accounts) {
-            System.out.println(account);
-            System.out.println("Rate: "
-                    + account.interestRate() + "%");
-            System.out.println("Yearly interest: Rs. "
-                    + account.yearlyInterest());
-        }
-
-        WithdrawRule rule1 = new WithdrawRule() {
-            @Override
-            public boolean allow(Account account, long amount) {
-                return account.canWithdraw(amount);
-            }
-        };
-
-        System.out.println("\nAnonymous class allows withdrawal: "
-                + rule1.allow(accounts[0], 200));
-
-        WithdrawRule rule2 =
-                (account, amount) -> account.canWithdraw(amount);
-
-        System.out.println("Lambda allows withdrawal: "
-                + rule2.allow(accounts[0], 200));
-
-        System.out.println("\nValid mobile: "
-                + isValidMobile("9876543210"));
-        System.out.println("Valid email: "
-                + Validator.isValidEmail("user@example.com"));
-
-        Command command =
-                CommandParser.parse("DEPOSIT AC0001 500");
-
-        System.out.println("\nParsed command: "
-                + command.type() + ", "
-                + command.accountNumber() + ", "
-                + command.amount());
-
-        System.out.println("\n"
-                + StatementFormatter.buildStatement(accounts[0]));
-
-        // Practical 8: Checked exceptions.
-        System.out.println("\n===== EXCEPTION HANDLING =====");
-
-        try {
-            accounts[0].withdraw(700);
-        } catch (InsufficientFundsException e) {
-            System.out.println("Withdrawal failed: " + e.getMessage());
-            System.out.println("Shortfall: Rs. " + e.getShortfall());
-        } catch (InvalidAmountException e) {
-            System.out.println("Invalid withdrawal: " + e.getMessage());
-        } finally {
-            System.out.println("Withdrawal attempt completed.");
-        }
-
-        try {
-            accounts[0].deposit(-100);
-        } catch (InvalidAmountException e) {
-            System.out.println("Deposit failed: " + e.getMessage());
-        }
-
-        try {
-            accounts[0].transfer(accounts[1], 200);
-        } catch (BankException e) {
-            System.out.println("Transfer failed: " + e.getMessage());
-        }
-
-        try {
-            accounts[0].transfer(null, 100);
-        } catch (BankException e) {
-            System.out.println("Transfer failed: " + e.getMessage());
-        }
-
-        // Practical 8: Try-with-resources.
-        System.out.println("\n===== TRY-WITH-RESOURCES =====");
-
-        try (BankSession session = new BankSession()) {
-            System.out.println("Performing banking operations...");
-        } finally {
-            System.out.println("Session block finished.");
-        }
-
-        // Practical 7: Annotation and reflection validation.
-        System.out.println("\n===== ANNOTATION VALIDATION =====");
-
-        Account testAccount =
-                new SavingsAccount("Test User", 1000, 500);
-
-        try {
-            Field balanceField =
-                    Account.class.getDeclaredField("balance");
-
-            balanceField.setAccessible(true);
-            balanceField.setLong(testAccount, -100);
-
-            String[] errors =
-                    AnnotationValidator.validate(testAccount);
-
-            if (errors.length == 0) {
-                System.out.println("No validation errors.");
-            } else {
-                for (String error : errors) {
-                    System.out.println("Validation error: " + error);
+            switch (choice) {
+                case 1 -> openAccount();
+                case 2 -> deposit();
+                case 3 -> withdraw();
+                case 4 -> transfer();
+                case 5 -> viewAccounts();
+                case 6 -> viewTransactions();
+                case 7 -> generateReport();
+                case 8 -> {
+                    saveAccounts();
+                    System.out.println(
+                            "Thank you for banking with MiniBank!");
+                    running = false;
                 }
+                default -> System.out.println(
+                        "Invalid choice. Please select 1 to 8.");
             }
-        } catch (ReflectiveOperationException e) {
-            System.out.println("Validation test failed: "
-                    + e.getMessage());
         }
-
-        // Practical 10: Concurrency demonstrations.
-        ConcurrencyDemo.run();
-
-        // Practical 11: Serialization, transaction logging and reporting.
-        demonstratePersistenceAndReporting(accounts);
 
         sc.close();
     }
 
-    private static void demonstratePersistenceAndReporting(
-            Account[] accounts) {
+    private static void showMenu() {
+        System.out.println("\n========== MINIBANK MENU ==========");
+        System.out.println("1. Open Account");
+        System.out.println("2. Deposit Money");
+        System.out.println("3. Withdraw Money");
+        System.out.println("4. Transfer Money");
+        System.out.println("5. View Accounts");
+        System.out.println("6. View Transaction History");
+        System.out.println("7. Generate End-of-Day Report");
+        System.out.println("8. Save and Exit");
+        System.out.println("===================================");
+    }
 
-        Path accountFile = Path.of("data", "accounts.dat");
-        Path logsFolder = Path.of("logs");
-        Path transactionFile = logsFolder.resolve("transactions.log");
-        Path reportFile = Path.of(
-                "reports", "end-of-day-report.txt");
-
-        System.out.println("\n===== PRACTICAL 11: PERSISTENCE =====");
-
+    private static void loadAccounts() {
         try {
-            // Save the accounts to a file.
-            StatePersister.save(accounts, accountFile);
-            System.out.println("Saved to: " + accountFile);
+            if (Files.exists(ACCOUNT_FILE)) {
+                Account[] saved =
+                        StatePersister.load(ACCOUNT_FILE);
 
-            // Load into a separate array.
-            Account[] loadedAccounts =
-                    StatePersister.load(accountFile);
+                for (Account account : saved) {
+                    store.add(account);
+                }
 
-            System.out.println("\nReloaded accounts:");
+                Account.synchronizeAccountCounter(store.getAll());
 
-            for (Account account : loadedAccounts) {
-                System.out.println(account);
+                System.out.println(
+                        saved.length + " saved account(s) loaded.");
+            } else {
+                // Sample accounts for the first run
+                store.add(new SavingsAccount("Aarav", 1000, 500));
+                store.add(new CurrentAccount("Diya", 2000, 1000));
+                store.add(new FixedDepositAccount("Rohan", 5000));
+
+                saveAccounts();
+
+                System.out.println(
+                        "Sample accounts created for your first run.");
             }
 
-            // Append sample transactions to the log.
-            TransactionLog.append(transactionFile, "DEPOSIT,100");
-            TransactionLog.append(transactionFile, "WITHDRAWAL,50");
-            TransactionLog.append(transactionFile, "DEPOSIT,200");
+            if (Files.exists(TRANSACTION_FILE)) {
+                for (String line :
+                        Files.readAllLines(TRANSACTION_FILE)) {
+                    store.addTransaction(line);
+                }
+            }
 
-            System.out.println("\nTransactions appended to: "
-                    + transactionFile);
+        } catch (IOException | RuntimeException e) {
+            System.out.println(
+                    "Could not load saved data: " + e.getMessage());
+        }
 
-            // Generate the end-of-day report.
-            ReportGenerator.generate(logsFolder, reportFile);
+        System.out.println("Accounts currently available: "
+                + store.getAll().size());
+    }
 
-            System.out.println("\n===== END-OF-DAY REPORT =====");
+    private static void openAccount() {
+        System.out.println("\n--- OPEN ACCOUNT ---");
 
-            for (String line : Files.readAllLines(reportFile)) {
+        String name = readText("Enter account holder name: ");
+
+        System.out.println("1. Savings Account");
+        System.out.println("2. Current Account");
+        System.out.println("3. Fixed Deposit Account");
+
+        int type = readInt("Choose account type: ");
+        long openingBalance =
+                readLong("Enter opening balance (Rs.): ");
+
+        try {
+            Account account;
+
+            switch (type) {
+                case 1 -> {
+                    long minimum = readLong(
+                            "Enter minimum balance (Rs.): ");
+                    account = new SavingsAccount(
+                            name, openingBalance, minimum);
+                }
+                case 2 -> {
+                    long overdraft = readLong(
+                            "Enter overdraft limit (Rs.): ");
+                    account = new CurrentAccount(
+                            name, openingBalance, overdraft);
+                }
+                case 3 -> {
+                    account = new FixedDepositAccount(
+                            name, openingBalance);
+                }
+                default -> {
+                    System.out.println("Invalid account type.");
+                    return;
+                }
+            }
+
+            store.add(account);
+            saveAccounts();
+
+            System.out.println("Account created successfully!");
+            System.out.println(account);
+
+        } catch (IllegalArgumentException e) {
+            System.out.println(
+                    "Account creation failed: " + e.getMessage());
+        }
+    }
+
+    private static void deposit() {
+        System.out.println("\n--- DEPOSIT MONEY ---");
+
+        Account account = findAccountByInput();
+        if (account == null) {
+            return;
+        }
+
+        long amount = readLong("Enter deposit amount (Rs.): ");
+
+        try {
+            account.deposit(amount);
+
+            recordTransaction(
+                    "DEPOSIT",
+                    account,
+                    amount);
+
+            saveAccounts();
+
+            System.out.println("Deposit successful!");
+            System.out.println("Updated balance: Rs. "
+                    + account.getBalance());
+
+        } catch (InvalidAmountException e) {
+            System.out.println("Deposit failed: " + e.getMessage());
+        }
+    }
+
+    private static void withdraw() {
+        System.out.println("\n--- WITHDRAW MONEY ---");
+
+        Account account = findAccountByInput();
+        if (account == null) {
+            return;
+        }
+
+        long amount = readLong("Enter withdrawal amount (Rs.): ");
+
+        try {
+            account.withdraw(amount);
+
+            recordTransaction(
+                    "WITHDRAWAL",
+                    account,
+                    amount);
+
+            saveAccounts();
+
+            System.out.println("Withdrawal successful!");
+            System.out.println("Remaining balance: Rs. "
+                    + account.getBalance());
+
+        } catch (InsufficientFundsException e) {
+            System.out.println("Withdrawal failed: " + e.getMessage());
+            System.out.println("Shortfall: Rs. " + e.getShortfall());
+        } catch (InvalidAmountException e) {
+            System.out.println("Withdrawal failed: " + e.getMessage());
+        }
+    }
+
+    private static void transfer() {
+        System.out.println("\n--- TRANSFER MONEY ---");
+
+        System.out.println("Source account:");
+        Account source = findAccountByInput();
+        if (source == null) {
+            return;
+        }
+
+        System.out.println("Destination account:");
+        Account destination = findAccountByInput();
+        if (destination == null) {
+            return;
+        }
+
+        if (source == destination) {
+            System.out.println(
+                    "Source and destination must be different accounts.");
+            return;
+        }
+
+        long amount = readLong("Enter transfer amount (Rs.): ");
+
+        try {
+            // Withdraw first; deposit only after withdrawal succeeds.
+            source.withdraw(amount);
+
+            try {
+                destination.deposit(amount);
+            } catch (InvalidAmountException e) {
+                try {
+                    source.deposit(amount);
+                } catch (InvalidAmountException rollbackError) {
+                    e.addSuppressed(rollbackError);
+                    System.out.println(
+                            "CRITICAL: Automatic rollback failed.");
+                }
+
+                System.out.println(
+                        "Transfer failed: " + e.getMessage());
+                return;
+            }
+
+            recordTransaction("WITHDRAWAL", source, amount);
+            recordTransaction("DEPOSIT", destination, amount);
+
+            saveAccounts();
+
+            System.out.println("Transfer successful!");
+            System.out.println("Source balance: Rs. "
+                    + source.getBalance());
+            System.out.println("Destination balance: Rs. "
+                    + destination.getBalance());
+
+        } catch (InsufficientFundsException e) {
+            System.out.println("Transfer failed: " + e.getMessage());
+        } catch (InvalidAmountException e) {
+            System.out.println("Transfer failed: " + e.getMessage());
+        }
+    }
+
+    private static void viewAccounts() {
+        System.out.println("\n--- ALL ACCOUNTS (SORTED BY BALANCE) ---");
+
+        ArrayList<Account> accounts = store.sortedByBalance();
+
+        if (accounts.isEmpty()) {
+            System.out.println("No accounts available.");
+            return;
+        }
+
+        for (Account account : accounts) {
+            System.out.println(account);
+        }
+
+        System.out.println("\nTotal accounts: " + accounts.size());
+    }
+
+    private static void viewTransactions() {
+        System.out.println("\n--- TRANSACTION HISTORY ---");
+
+        ArrayList<String> history =
+                store.getTransactionHistory();
+
+        if (history.isEmpty()) {
+            System.out.println("No transactions recorded yet.");
+            return;
+        }
+
+        for (String transaction : history) {
+            System.out.println(transaction);
+        }
+    }
+
+    private static void generateReport() {
+        System.out.println("\n--- END-OF-DAY REPORT ---");
+
+        try {
+            ReportGenerator.generate(LOGS_FOLDER, REPORT_FILE);
+
+            for (String line : Files.readAllLines(REPORT_FILE)) {
                 System.out.println(line);
             }
 
-            System.out.println("\nReport saved to: " + reportFile);
+            System.out.println("Report saved to: " + REPORT_FILE);
 
-        } catch (IOException e) {
-            System.out.println("File operation failed: "
-                    + e.getMessage());
+        } catch (IOException | RuntimeException e) {
+            System.out.println(
+                    "Could not generate report: " + e.getMessage());
+        }
+    }
+
+    private static Account findAccountByInput() {
+        String accountNumber =
+                readText("Enter account number: ");
+
+        Account account = store.get(accountNumber);
+
+        if (account == null) {
+            System.out.println("Account not found.");
+        }
+
+        return account;
+    }
+
+    private static void recordTransaction(
+            String type, Account account, long amount) {
+
+        String historyEntry = type
+                + " | Account: " + account.getAccountNumber()
+                + " | Holder: " + account.getOwnerName()
+                + " | Amount: Rs. " + amount;
+
+        store.addTransaction(historyEntry);
+
+        // ReportGenerator expects TYPE,amount format.
+        TransactionLog.append(
+                TRANSACTION_FILE,
+                type + "," + amount);
+    }
+
+    private static void saveAccounts() {
+        try {
+            Account[] accounts =
+                    store.getAll().toArray(new Account[0]);
+
+            StatePersister.save(accounts, ACCOUNT_FILE);
+
         } catch (RuntimeException e) {
-            System.out.println("Persistence operation failed: "
-                    + e.getMessage());
+            System.out.println(
+                    "Warning: Could not save accounts: "
+                            + e.getMessage());
+        }
+    }
+
+    private static String readText(String prompt) {
+        while (true) {
+            System.out.print(prompt);
+            String value = sc.nextLine().trim();
+
+            if (!value.isEmpty()) {
+                return value;
+            }
+
+            System.out.println("Input cannot be empty.");
+        }
+    }
+
+    private static int readInt(String prompt) {
+        while (true) {
+            System.out.print(prompt);
+
+            try {
+                return Integer.parseInt(sc.nextLine().trim());
+            } catch (NumberFormatException e) {
+                System.out.println("Enter a valid whole number.");
+            }
+        }
+    }
+
+    private static long readLong(String prompt) {
+        while (true) {
+            System.out.print(prompt);
+
+            try {
+                return Long.parseLong(sc.nextLine().trim());
+            } catch (NumberFormatException e) {
+                System.out.println(
+                        "Enter a valid whole number amount.");
+            }
         }
     }
 }

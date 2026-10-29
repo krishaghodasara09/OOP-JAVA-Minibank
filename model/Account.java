@@ -34,6 +34,24 @@ public abstract class Account
         return String.format("AC%04d", accountCounter);
     }
 
+    // Prevent duplicate account numbers after loading saved accounts
+    public static void synchronizeAccountCounter(
+            Iterable<Account> existingAccounts) {
+
+        int maxNumber = accountCounter;
+
+        for (Account account : existingAccounts) {
+            String number = account.getAccountNumber();
+
+            if (number != null && number.matches("AC\\d+")) {
+                int value = Integer.parseInt(number.substring(2));
+                maxNumber = Math.max(maxNumber, value);
+            }
+        }
+
+        accountCounter = maxNumber;
+    }
+
     public Account(String ownerName, long openingBalance) {
         if (openingBalance < 0) {
             throw new IllegalArgumentException(
@@ -57,6 +75,11 @@ public abstract class Account
         if (amount <= 0) {
             throw new InvalidAmountException(
                     "Deposit amount must be greater than zero.");
+        }
+
+        if (balance > Long.MAX_VALUE - amount) {
+            throw new InvalidAmountException(
+                    "Deposit exceeds the maximum supported balance.");
         }
 
         balance += amount;
@@ -98,7 +121,18 @@ public abstract class Account
             }
 
             withdraw(amount);
-            to.deposit(amount);
+
+            try {
+                to.deposit(amount);
+            } catch (InvalidAmountException e) {
+                try {
+                    deposit(amount);
+                } catch (InvalidAmountException rollbackError) {
+                    e.addSuppressed(rollbackError);
+                }
+
+                throw e;
+            }
 
             System.out.println("Transfer successful: Rs. " + amount);
 
@@ -123,7 +157,7 @@ public abstract class Account
     }
 
     @Override
-    public long getBalance() {
+    public synchronized long getBalance() {
         return balance;
     }
 
@@ -131,7 +165,6 @@ public abstract class Account
         return active;
     }
 
-    // Compare accounts by account number
     @Override
     public int compareTo(Account other) {
         return this.accountNumber.compareTo(other.accountNumber);
