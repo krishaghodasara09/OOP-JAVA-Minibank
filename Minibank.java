@@ -4,7 +4,6 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Scanner;
 
-import exception.BankException;
 import exception.InsufficientFundsException;
 import exception.InvalidAmountException;
 import model.Account;

@@ -1,8 +1,7 @@
 package model;
 
-import java.io.Serializable;
 
-public class SavingsAccount extends Account implements Premium, Serializable {
+public class SavingsAccount extends Account implements Premium{
 
     private static final long serialVersionUID = 1L;
 
